@@ -6,9 +6,7 @@ from io import BytesIO
 import time
 
 pygame.init()
-X = 900
-Y = 700
-screen = pygame.display.set_mode((X, Y))
+screen = pygame.display.set_mode((600, 800), pygame.RESIZABLE)
 
 
 class CatFacts:
@@ -32,7 +30,7 @@ class CatFacts:
 
     def showPic(self, name, image):
         pygame.display.set_caption(name)
-        req = urllib.request.Request(image, headers={"User-Agent": True})
+        req = urllib.request.Request(image, headers={"User-Agent": "Mozilla/5.0"})
         res = urllib.request.urlopen(req)
         surface = pygame.image.load(BytesIO(res.read())).convert()
         picture = pygame.transform.scale(surface, surface.get_rect().center)
