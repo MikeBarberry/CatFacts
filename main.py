@@ -6,7 +6,10 @@ from io import BytesIO
 import time
 
 pygame.init()
-screen = pygame.display.set_mode((600, 800), pygame.RESIZABLE)
+displayInfo = pygame.display.Info()
+screen = pygame.display.set_mode(
+    (displayInfo.current_w, displayInfo.current_h), pygame.RESIZABLE
+)
 
 
 class CatFacts:
