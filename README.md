@@ -2,4 +2,4 @@ Python Version: 3.10
 
 Usage:
 
-Install & run main.py with access to terminal (browser window will be auto-opened).
+Visit (Replit Link)[https://replit.com/@MikeBarberry/CatFacts?v=1] and click RUN
