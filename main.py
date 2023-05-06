@@ -62,7 +62,7 @@ class CatFacts(Thread):
 
     def prepareTextBlit(self, origin, desc):
         emojiSurf = self.emojiFont.render(self.catEmoji, True, (251, 206, 177))
-        originSurf = self.textFont.render(origin, True, (137, 207, 240))
+        originSurf = self.textFontM.render(origin, True, (137, 207, 240))
         self.blitText(emojiSurf, originSurf, desc)
 
     def blitText(self, emoji, origin, desc):
@@ -82,7 +82,7 @@ class CatFacts(Thread):
         lines = []
         line = ""
         for word in desc.split():
-            if self.textFont.size(line + word)[0] < 400:
+            if self.textFontS.size(line + word)[0] < 400:
                 line += f"{word} "
             else:
                 lines.append(line)
@@ -93,7 +93,7 @@ class CatFacts(Thread):
     def utilBlitLines(self, lines, prevH):
         currH = prevH + 5
         for line in lines:
-            lineToRender = self.textFont.render(line, True, (255, 165, 0))
+            lineToRender = self.textFontS.render(line, True, (255, 165, 0))
             self.screen.blit(lineToRender, (20, currH))
             currH += sum([lineToRender.get_height(), 5])
 
@@ -116,7 +116,8 @@ class CatFacts(Thread):
             (display.Info().current_w, display.Info().current_h), RESIZABLE
         )
         self.emojiFont = font.Font("./NotoEmoji-Medium.ttf", 30)
-        self.textFont = font.SysFont("segoeuisymbol", 25)
+        self.textFontM = font.SysFont("segoeuisymbol", 25)
+        self.textFontS = font.SysFont("segoeuisymbol", 20)
 
     def main(self):
         while len(self.catFacts):
