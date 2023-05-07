@@ -26,6 +26,7 @@ INITIAL_X = 20
 INITIAL_Y = 20
 EMOJI_PATH = path.join(path.abspath("."), "fonts", "NotoEmoji-Medium.ttf")
 LOADING_PATH = path.join(path.abspath("."), "images", "inked_loading_cat.jpg")
+QUIT_ID = QUIT
 
 
 class CatFacts:
@@ -55,6 +56,10 @@ class CatFacts:
             transform,
             *self.fonts.values()
         )
+        """
+        make fetch request
+        from main event loop
+        """
         fetch_event = pygEvent.Event(
             self.eventIds["fetch"], {"callback": self.fetch_cats}
         )
