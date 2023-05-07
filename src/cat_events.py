@@ -10,7 +10,7 @@ class CatEventEmitter(Thread):
         self.eventLoop = eventLoop
 
     def killThread(self):
-        self.event.set()
+        self.stopped.set()
 
     """
     post event to loop 
