@@ -17,8 +17,8 @@ from json import loads
 from operator import itemgetter
 from urllib.request import Request, urlopen
 
-from cat_scheduler import CatScheduler
-from pyg_utils import PygUtils
+from cat_events import CatEventEmitter
+from pygame_helper import PygHelper
 
 
 STOP_FLAG = Event()
@@ -26,7 +26,6 @@ INITIAL_X = 20
 INITIAL_Y = 20
 EMOJI_PATH = path.join(path.abspath("."), "fonts", "NotoEmoji-Medium.ttf")
 LOADING_PATH = path.join(path.abspath("."), "images", "inked_loading_cat.jpg")
-QUIT_ID = QUIT
 
 
 class CatFacts:
@@ -47,7 +46,7 @@ class CatFacts:
             RESIZABLE,
             SCALED,
         )
-        self.pyg_utils = PygUtils(
+        self.helper = PygHelper(
             INITIAL_X,
             INITIAL_Y,
             self.screen,
@@ -94,7 +93,7 @@ class CatFacts:
         return res
 
     def spawn_child(self, cats):
-        child = CatScheduler(STOP_FLAG, cats, self.eventIds["cat"], pygEvent)
+        child = CatEventEmitter(STOP_FLAG, cats, self.eventIds["cat"], pygEvent)
         child.daemon = True
         child.start()
 
@@ -107,12 +106,12 @@ class CatFacts:
                 self.running = False
             elif event.type == fetchId:
                 with open(LOADING_PATH, "rb") as image:
-                    self.pyg_utils.show_loading(BytesIO(image.read()))
+                    self.helper.show_loading(BytesIO(image.read()))
                 # self.fetch_cats
                 callback = event.__dict__["callback"]
                 self.spawn_child(callback())
             elif event.type == catId:
-                self.pyg_utils.show_cat(*event.__dict__["data"].values())
+                self.helper.show_cat(*event.__dict__["data"].values())
         print("Bye!")
         exit(0)
 

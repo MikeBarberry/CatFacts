@@ -7,7 +7,7 @@ ORIGIN_COLOR = (137, 207, 240)
 DESCRIPTION_COLOR = (65, 65, 65)
 
 
-class PygUtils:
+class PygHelper:
     def __init__(
         self, x, y, screen, display, pygImage, transform, smallFont, medFont, emojiFont
     ):
