@@ -1,5 +1,5 @@
 import os
-import time
+from collections import deque
 from io import BytesIO
 from json import loads
 from operator import itemgetter
@@ -20,11 +20,12 @@ class CFUtils:
         fetchEvent = pygEvent.Event(fetchId, {"callback": self.cats})
         pygEvent.post(fetchEvent)
 
-    def cats(self, catId, waitId, pygEvent):
+    def cats(self):
         req = Request("https://api.thecatapi.com/v1/breeds")
         req.add_header("x-api-key", os.getenv("API_KEY"))
         res = urlopen(req)
         json = loads(res.read().decode("utf-8"))
+        q = deque()
         for ele in json:
             if not "image" in ele:
                 continue
@@ -32,8 +33,7 @@ class CFUtils:
                 "image", "name", "description", "origin"
             )(ele)
             imageContent = self.image(image["url"])
-            cat = pygEvent.Event(
-                catId,
+            q.append(
                 {
                     "breed": name,
                     "details": details,
@@ -41,9 +41,7 @@ class CFUtils:
                     "image": BytesIO(imageContent.read()),
                 },
             )
-            pygEvent.post(cat)
-            wait = pygEvent.Event(waitId, {"wait": None})
-            pygEvent.post(wait)
+        return q
 
     def image(self, url):
         req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
