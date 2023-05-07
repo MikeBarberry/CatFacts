@@ -1,7 +1,7 @@
 from threading import Thread
 
 
-class CFScheduler(Thread):
+class CatScheduler(Thread):
     def __init__(self, event, cats, catsId, eventLoop):
         Thread.__init__(self)
         self.stopped = event

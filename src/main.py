@@ -1,8 +1,7 @@
-from os import path
+from os import path, getenv
 from threading import Event
 from io import BytesIO
-from cf_scheduler import CFScheduler
-from cf_utils import CFUtils
+from collections import deque
 from pygame import (
     event as pygEvent,
     font,
@@ -14,17 +13,17 @@ from pygame import (
     SCALED,
     QUIT,
 )
+from json import loads
+from operator import itemgetter
+from urllib.request import Request, urlopen
+
+from cat_scheduler import CatScheduler
+from pyg_utils import PygUtils
+
 
 STOP_FLAG = Event()
 INITIAL_X = 20
 INITIAL_Y = 20
-CAT_EMOJI = "\U0001F431"
-GLOBE_EMOJI_NA = "\U0001F30E"
-GLOBE_EMOJI_AS = "\U0001F30F"
-HOURGLASS_EMOJI = "\U000023F3"
-EMOJI_COLOR = (255, 165, 0)
-ORIGIN_COLOR = (137, 207, 240)
-DESCRIPTION_COLOR = (65, 65, 65)
 EMOJI_PATH = path.join(path.abspath("."), "fonts", "NotoEmoji-Medium.ttf")
 LOADING_PATH = path.join(path.abspath("."), "images", "inked_loading_cat.jpg")
 
@@ -37,61 +36,60 @@ class CatFacts:
             "fetch": pygEvent.custom_type(),
             "cat": pygEvent.custom_type(),
         }
-        self.utils = CFUtils(INITIAL_X, INITIAL_Y)
-        # post fetch event to the loop
-        self.utils.fetch(pygEvent, self.eventIds["fetch"])
         self.fonts = {
             "small": font.SysFont("segoeuisymbol", 20),
             "med": font.SysFont("segoeuisymbol", 25),
             "emoji": font.Font(EMOJI_PATH, 30),
         }
         self.screen = display.set_mode(
-            self.utils.size(display),
+            (display.Info().current_w, display.Info().current_h),
             RESIZABLE,
             SCALED,
         )
-
-    def origin(self, origin):
-        screenContent = [
-            (self.fonts["emoji"], CAT_EMOJI, EMOJI_COLOR),
-            (self.fonts["med"], origin, ORIGIN_COLOR),
-            (self.fonts["emoji"], CAT_EMOJI, EMOJI_COLOR),
-        ]
-        rendered = self.utils.renderList(screenContent)
-        self.utils.blit(self.screen, {"type": "origin", "content": rendered})
-
-    def details(self, details):
-        brokenLines = self.utils.breakLine(self.fonts["small"], details)
-        screenContent = [
-            (self.fonts["small"], x, DESCRIPTION_COLOR) for x in brokenLines
-        ]
-        rendered = self.utils.renderList(screenContent)
-        self.utils.blit(self.screen, {"type": "details", "content": rendered})
-
-    def image(self, image):
-        transformed = self.utils.transformImage(pygImage, transform, image, display)
-        self.utils.blit(
-            self.screen, {"type": "image", "content": [transformed, (0, 0)]}
+        self.pyg_utils = PygUtils(
+            INITIAL_X,
+            INITIAL_Y,
+            self.screen,
+            display,
+            pygImage,
+            transform,
+            *self.fonts.values()
         )
-
-    def showCat(self, breed, details, origin, image):
-        display.set_caption(breed)
-        self.image(image)
-        self.origin(origin)
-        self.details(details)
-        display.flip()
-        self.utils.log(
-            breed, details, origin, CAT_EMOJI, GLOBE_EMOJI_NA, GLOBE_EMOJI_AS
+        fetch_event = pygEvent.Event(
+            self.eventIds["fetch"], {"callback": self.fetch_cats}
         )
+        pygEvent.post(fetch_event)
 
-    def loading(self, image):
-        display.set_caption("Loading...")
-        self.image(image)
-        display.flip()
-        print(f"Loading data {HOURGLASS_EMOJI}")
+    def fetch_cats(self):
+        req = Request("https://api.thecatapi.com/v1/breeds")
+        req.add_header("x-api-key", getenv("API_KEY"))
+        res = urlopen(req)
+        json = loads(res.read().decode("utf-8"))
+        q = deque()
+        for ele in json:
+            if not "image" in ele:
+                continue
+            image, name, details, origin = itemgetter(
+                "image", "name", "description", "origin"
+            )(ele)
+            imageContent = self.fetch_image(image["url"])
+            q.append(
+                {
+                    "breed": name,
+                    "details": details,
+                    "origin": origin,
+                    "image": BytesIO(imageContent.read()),
+                },
+            )
+        return q
 
-    def spawn(self, cats):
-        child = CFScheduler(STOP_FLAG, cats, self.eventIds["cat"], pygEvent)
+    def fetch_image(self, url):
+        req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        res = urlopen(req)
+        return res
+
+    def spawn_child(self, cats):
+        child = CatScheduler(STOP_FLAG, cats, self.eventIds["cat"], pygEvent)
         child.daemon = True
         child.start()
 
@@ -103,21 +101,13 @@ class CatFacts:
             if event.type == QUIT:
                 self.running = False
             elif event.type == fetchId:
-                # load and show loading image
                 with open(LOADING_PATH, "rb") as image:
-                    self.loading(BytesIO(image.read()))
-                """
-                invoke fetch
-                when it returns, spawn
-                daemon process to invoke
-                cat events without blocking
-                main thread
-                """
-                fetch = event.__dict__["callback"]
-                cats = fetch()
-                self.spawn(cats)
+                    self.pyg_utils.show_loading(BytesIO(image.read()))
+                # self.fetch_cats
+                callback = event.__dict__["callback"]
+                self.spawn_child(callback())
             elif event.type == catId:
-                self.showCat(*event.__dict__["data"].values())
+                self.pyg_utils.show_cat(*event.__dict__["data"].values())
         print("Bye!")
         exit(0)
 
