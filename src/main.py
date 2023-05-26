@@ -1,4 +1,4 @@
-from os import path, getenv
+from os import path
 from threading import Event
 from io import BytesIO
 from collections import deque
@@ -13,15 +13,10 @@ from pygame import (
     SCALED,
     QUIT,
 )
-from json import loads
-from operator import itemgetter
-from urllib.request import Request, urlopen
 
 from cat_events import CatEventEmitter
 from pygame_helper import PygHelper
 
-
-STOP_FLAG = Event()
 INITIAL_X = 20
 INITIAL_Y = 20
 EMOJI_PATH = path.join(path.abspath("."), "fonts", "NotoEmoji-Medium.ttf")
@@ -32,21 +27,44 @@ class CatFacts:
     def __init__(self):
         init()
         self.running = True
-        self.eventIds = {
+        self.eventIds = self.init_custom_events()
+        self.fonts = self.init_fonts()
+        self.screen = self.init_screen()
+        self.helper = self.init_pygame_helper()
+        self.child = self.init_child_thread()
+        self.post_event("load")
+
+    def init_custom_events(self):
+        return {
+            "load": pygEvent.custom_type(),
             "fetch": pygEvent.custom_type(),
             "cat": pygEvent.custom_type(),
         }
-        self.fonts = {
+
+    def init_fonts(self):
+        return {
             "small": font.SysFont("segoeuisymbol", 20),
             "med": font.SysFont("segoeuisymbol", 25),
             "emoji": font.Font(EMOJI_PATH, 30),
         }
-        self.screen = display.set_mode(
-            (display.Info().current_w, display.Info().current_h),
+
+    def init_child_thread(self):
+        event = Event()
+        child = CatEventEmitter(event, deque(), self.eventIds["cat"], pygEvent)
+        child.daemon = True
+        child.start()
+        return child
+
+    def init_screen(self):
+        screen = display.set_mode(
+            (display.Info().current_w - 100, display.Info().current_h - 100),
             RESIZABLE,
             SCALED,
         )
-        self.helper = PygHelper(
+        return screen
+
+    def init_pygame_helper(self):
+        helper = PygHelper(
             INITIAL_X,
             INITIAL_Y,
             self.screen,
@@ -55,63 +73,30 @@ class CatFacts:
             transform,
             *self.fonts.values()
         )
-        """
-        make fetch request
-        from main event loop
-        """
-        fetch_event = pygEvent.Event(
-            self.eventIds["fetch"], {"callback": self.fetch_cats}
-        )
-        pygEvent.post(fetch_event)
+        return helper
 
-    def fetch_cats(self):
-        req = Request("https://api.thecatapi.com/v1/breeds")
-        req.add_header("x-api-key", getenv("API_KEY"))
-        res = urlopen(req)
-        json = loads(res.read().decode("utf-8"))
-        q = deque()
-        for ele in json:
-            if not "image" in ele:
-                continue
-            image, name, details, origin = itemgetter(
-                "image", "name", "description", "origin"
-            )(ele)
-            imageContent = self.fetch_image(image["url"])
-            q.append(
-                {
-                    "breed": name,
-                    "details": details,
-                    "origin": origin,
-                    "image": BytesIO(imageContent.read()),
-                },
-            )
-        return q
+    def post_event(self, e):
+        event = pygEvent.Event(self.eventIds[e])
+        pygEvent.post(event)
 
-    def fetch_image(self, url):
-        req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        res = urlopen(req)
-        return res
-
-    def spawn_child(self, cats):
-        child = CatEventEmitter(STOP_FLAG, cats, self.eventIds["cat"], pygEvent)
-        child.daemon = True
-        child.start()
+    def show_loading_image(self):
+        with open(LOADING_PATH, "rb") as image:
+            self.helper.show_loading(BytesIO(image.read()))
 
     def main(self):
         print("\n \U0001F389 Welcome to the show! Let's get this party started... \n")
-        fetchId, catId = self.eventIds.values()
+        loadId, fetchId, catId = self.eventIds.values()
         while self.running:
             event = pygEvent.wait()
             if event.type == QUIT:
                 self.running = False
+            elif event.type == loadId:
+                self.show_loading_image()
+                self.post_event("fetch")
             elif event.type == fetchId:
-                with open(LOADING_PATH, "rb") as image:
-                    self.helper.show_loading(BytesIO(image.read()))
-                # self.fetch_cats
-                callback = event.__dict__["callback"]
-                self.spawn_child(callback())
+                self.child.fetch_cats()
             elif event.type == catId:
-                self.helper.show_cat(*event.__dict__["data"].values())
+                self.helper.show_cat(*event.__dict__["data"][0].values())
         print("Bye!")
         exit(0)
 
