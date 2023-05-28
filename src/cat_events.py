@@ -1,70 +1,72 @@
 from threading import Thread
-from json import loads
-from operator import itemgetter
-from urllib.request import Request, urlopen
-from os import getenv
-from io import BytesIO
 
 
 class CatEventEmitter(Thread):
-    def __init__(self, event, cats, cats_id, event_loop):
+    def __init__(self, event_signal):
         Thread.__init__(self)
-        self.started = False
-        self.event = event
-        self.cats = cats
-        self.cats_id = cats_id
-        self.event_loop = event_loop
+        self.stopped = event_signal
+        self.cats_list = []
+        self.current_cat = 0
+        self.total_count = 0
+        self.waiting = True
+        self.post_function = None
 
-    def fetch_cats(self):
-        req = Request("https://api.thecatapi.com/v1/breeds")
-        req.add_header("x-api-key", getenv("API_KEY"))
-        res = urlopen(req)
-        json = loads(res.read().decode("utf-8"))
-        for ele in json:
-            if not "image" in ele:
-                continue
-            image, name, details, origin = itemgetter(
-                "image", "name", "description", "origin"
-            )(ele)
-            imageContent = self.fetch_image(image["url"])
-            cat = (
-                {
-                    "breed": name,
-                    "details": details,
-                    "origin": origin,
-                    "image": BytesIO(imageContent.read()),
-                },
-            )
-            self.add_cat(cat)
-
-    def fetch_image(self, url):
-        req = Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        res = urlopen(req)
-        return res
+    def start_thread(self):
+        self.start()
 
     def kill_thread(self):
         self.stopped.set()
 
+    def set_post_function(self, callback):
+        self.post_function = callback
+
+    def set_total_count(self, count):
+        self.total_count = count
+
     def add_cat(self, cat):
-        self.cats.append(cat)
+        self.cats_list.append(cat)
+        print(cat["breed"])
 
-    def immediately_show_first_cat(self):
-        if len(self.cats) == 0:
-            self.run()
+    def can_continue(self):
+        can_continue = self.current_cat < len(self.cats_list)
+        if can_continue:
+            self.waiting = False
+        return can_continue
+
+    def update_current_cat(self):
+        if self.total_count and self.current_cat == self.total_count - 1:
+            self.current_cat = 0
         else:
-            self.started = True
-            self.main()
-            self.run()
+            self.current_cat += 1
 
-    def main(self):
-        cat = self.cats.popleft()
-        event = self.event_loop.Event(self.cats_id, {"data": cat})
-        self.event_loop.post(event)
+    def post_cat(self):
+        if not self.can_continue():
+            self.waiting = True
+            return
+
+        current_cat_data = self.cats_list[self.current_cat]
+        self.post_function("show_cat", current_cat_data)
+        self.update_current_cat()
 
     def run(self):
-        if not self.started:
-            while not self.event.wait(1):
-                self.immediately_show_first_cat()
-        else:
-            while not self.event.wait(10.0):
-                self.main()
+        while not self.stopped.is_set():
+            print(
+                "hello",
+                "current cat",
+                self.current_cat,
+                len(self.cats_list),
+            )
+            if self.waiting:
+                while self.waiting and not self.stopped.wait(0.5):
+                    print(
+                        "from first wait",
+                        self.current_cat,
+                    )
+                    self.can_continue()
+            else:
+                while not self.waiting and not self.stopped.wait(10.0):
+                    print(
+                        "from second wait",
+                        self.current_cat,
+                    )
+                    self.post_cat()

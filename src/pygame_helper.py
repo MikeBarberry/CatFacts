@@ -1,3 +1,10 @@
+from utils import init_fonts, init_pygame_screen
+
+screen = init_pygame_screen()
+fonts = init_fonts()
+
+smallFont, medFont, emojiFont = fonts.values()
+
 CAT_EMOJI = "\U0001F431"
 GLOBE_EMOJI_NA = "\U0001F30E"
 GLOBE_EMOJI_AS = "\U0001F30F"
@@ -5,35 +12,30 @@ HOURGLASS_EMOJI = "\U000023F3"
 EMOJI_COLOR = (255, 165, 0)
 ORIGIN_COLOR = (137, 207, 240)
 DESCRIPTION_COLOR = (65, 65, 65)
+INITIAL_X = 20
+INITIAL_Y = 20
 
 
 class PygHelper:
-    def __init__(
-        self, x, y, screen, display, pygImage, transform, smallFont, medFont, emojiFont
-    ):
+    def __init__(self, display, pygImage, transform):
         self.screen = screen
         self.display = display
         self.pygImage = pygImage
         self.transform = transform
-        self.initial_x = x
-        self.initial_y = y
-        self.X = x
-        self.Y = y
-        self.emojiFont = emojiFont
-        self.smallFont = smallFont
-        self.medFont = medFont
+        self.X = INITIAL_X
+        self.Y = INITIAL_Y
 
     def show_origin(self, origin):
         screenContent = [
-            (self.emojiFont, CAT_EMOJI, EMOJI_COLOR),
-            (self.medFont, origin, ORIGIN_COLOR),
-            (self.emojiFont, CAT_EMOJI, EMOJI_COLOR),
+            (emojiFont, CAT_EMOJI, EMOJI_COLOR),
+            (medFont, origin, ORIGIN_COLOR),
+            (emojiFont, CAT_EMOJI, EMOJI_COLOR),
         ]
         self.render_and_blit(screenContent, "origin")
 
     def show_details(self, details):
-        brokenLines = self.break_line(self.smallFont, details)
-        screenContent = [(self.smallFont, x, DESCRIPTION_COLOR) for x in brokenLines]
+        brokenLines = self.break_line(smallFont, details)
+        screenContent = [(smallFont, x, DESCRIPTION_COLOR) for x in brokenLines]
         self.render_and_blit(screenContent, "details")
 
     def show_image(self, image):
@@ -122,7 +124,7 @@ class PygHelper:
                     self.X = self.update_position("X", ele)
                 if section == "details" or idx == len(content) - 1:
                     self.Y = self.update_position("Y", ele)
-            self.X = self.initial_x
-            self.Y = self.Y if section == "origin" else self.initial_y
+            self.X = INITIAL_X
+            self.Y = self.Y if section == "origin" else INITIAL_Y
         else:
             self.screen.blit(*content)

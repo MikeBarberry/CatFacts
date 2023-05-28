@@ -1,102 +1,70 @@
-from os import path
-from threading import Event
-from io import BytesIO
-from collections import deque
-from pygame import (
-    event as pygEvent,
-    font,
-    init,
-    display,
-    image as pygImage,
-    transform,
-    RESIZABLE,
-    SCALED,
-    QUIT,
-)
+import os
+from threading import Event, Thread
+import io
+import pygame
 
 from cat_events import CatEventEmitter
 from pygame_helper import PygHelper
 
-INITIAL_X = 20
-INITIAL_Y = 20
-EMOJI_PATH = path.join(path.abspath("."), "fonts", "NotoEmoji-Medium.ttf")
-LOADING_PATH = path.join(path.abspath("."), "images", "inked_loading_cat.jpg")
+from utils import init_custom_events, fetch_cat_data
+
+custom_events = init_custom_events()
+
+pyg_helper = PygHelper(
+    pygame.display,
+    pygame.image,
+    pygame.transform,
+)
+
+event_signal = Event()
+cat_event_emitter = CatEventEmitter(event_signal)
+
+fetch = Thread(
+    target=fetch_cat_data,
+    args=[
+        cat_event_emitter.add_cat,
+        cat_event_emitter.set_total_count,
+        cat_event_emitter.start_thread,
+    ],
+    daemon=True,
+)
+fetch.start()
 
 
 class CatFacts:
     def __init__(self):
-        init()
+        pygame.init()
         self.running = True
-        self.eventIds = self.init_custom_events()
-        self.fonts = self.init_fonts()
-        self.screen = self.init_screen()
-        self.helper = self.init_pygame_helper()
-        self.child = self.init_child_thread()
-        self.post_event("load")
+        self.custom_events = init_custom_events()
+        self.helper = pyg_helper
+        self.post_event("loading")
+        cat_event_emitter.set_post_function(self.post_event)
 
-    def init_custom_events(self):
-        return {
-            "load": pygEvent.custom_type(),
-            "fetch": pygEvent.custom_type(),
-            "cat": pygEvent.custom_type(),
-        }
-
-    def init_fonts(self):
-        return {
-            "small": font.SysFont("segoeuisymbol", 20),
-            "med": font.SysFont("segoeuisymbol", 25),
-            "emoji": font.Font(EMOJI_PATH, 30),
-        }
-
-    def init_child_thread(self):
-        event = Event()
-        child = CatEventEmitter(event, deque(), self.eventIds["cat"], pygEvent)
-        child.daemon = True
-        child.start()
-        return child
-
-    def init_screen(self):
-        screen = display.set_mode(
-            (display.Info().current_w - 100, display.Info().current_h - 100),
-            RESIZABLE,
-            SCALED,
-        )
-        return screen
-
-    def init_pygame_helper(self):
-        helper = PygHelper(
-            INITIAL_X,
-            INITIAL_Y,
-            self.screen,
-            display,
-            pygImage,
-            transform,
-            *self.fonts.values()
-        )
-        return helper
-
-    def post_event(self, e):
-        event = pygEvent.Event(self.eventIds[e])
-        pygEvent.post(event)
+    def post_event(self, event_name, data={}):
+        event_id = self.custom_events[event_name]
+        event = pygame.event.Event(event_id, {"data": data})
+        pygame.event.post(event)
 
     def show_loading_image(self):
-        with open(LOADING_PATH, "rb") as image:
-            self.helper.show_loading(BytesIO(image.read()))
+        root_dir = os.path.abspath(".")
+        loading_image_path = os.path.join(root_dir, "images", "inked_loading_cat.jpg")
+
+        with open(loading_image_path, "rb") as image:
+            image_bytes = io.BytesIO(image.read())
+            self.helper.show_loading(image_bytes)
 
     def main(self):
         print("\n \U0001F389 Welcome to the show! Let's get this party started... \n")
-        loadId, fetchId, catId = self.eventIds.values()
+        loading, show_cat = self.custom_events.values()
         while self.running:
-            event = pygEvent.wait()
-            if event.type == QUIT:
+            event = pygame.event.wait()
+            if event.type == pygame.QUIT:
                 self.running = False
-            elif event.type == loadId:
+            elif event.type == loading:
                 self.show_loading_image()
-                self.post_event("fetch")
-            elif event.type == fetchId:
-                self.child.fetch_cats()
-            elif event.type == catId:
-                self.helper.show_cat(*event.__dict__["data"][0].values())
+            elif event.type == show_cat:
+                breed, details, origin, image = event.__dict__["data"].values()
+                self.helper.show_cat(breed, details, origin, image)
         print("Bye!")
         exit(0)
 
