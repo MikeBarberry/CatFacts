@@ -60,6 +60,7 @@ class CatFacts:
             event = pygame.event.wait()
             if event.type == pygame.QUIT:
                 self.running = False
+                cat_event_emitter.kill_thread()
             elif event.type == loading:
                 self.show_loading_image()
             elif event.type == show_cat:

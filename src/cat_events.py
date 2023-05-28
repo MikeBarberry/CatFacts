@@ -50,23 +50,9 @@ class CatEventEmitter(Thread):
 
     def run(self):
         while not self.stopped.is_set():
-            print(
-                "hello",
-                "current cat",
-                self.current_cat,
-                len(self.cats_list),
-            )
             if self.waiting:
                 while self.waiting and not self.stopped.wait(0.5):
-                    print(
-                        "from first wait",
-                        self.current_cat,
-                    )
                     self.can_continue()
             else:
                 while not self.waiting and not self.stopped.wait(10.0):
-                    print(
-                        "from second wait",
-                        self.current_cat,
-                    )
                     self.post_cat()

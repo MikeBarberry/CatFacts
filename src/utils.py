@@ -62,7 +62,7 @@ def fetch_cat_data(add_cat_to_list, report_cats_count, start_posting_cat_events)
 
         add_cat_to_list(cat)
 
-        if count_cats == 5:
+        if count_cats == 1:
             start_posting_cat_events()
 
     report_cats_count(count_cats)
