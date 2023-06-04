@@ -1,10 +1,16 @@
 from threading import Thread
 
+# Main idea: only wait for enough
+# data to show next cat.
+# Load everything else in the
+# background.
+
 
 class CatEventEmitter(Thread):
     def __init__(self, event_signal):
         Thread.__init__(self)
-        # Event.wait returns False when not set
+        # self.stopped.wait returns False
+        # while event_signal is not set
         self.stopped = event_signal
         self.waiting = True
         self.finished_fetching = False
@@ -14,29 +20,32 @@ class CatEventEmitter(Thread):
 
     def post_cat(self):
         if self.current_cat >= len(self.cats_list):
-            self.waiting = True
-            return
-
-        if self.finished_fetching and self.current_cat >= len(self.cats_list):
-            self.current_cat = 0
+            if self.finished_fetching:
+                # restart from beginning
+                self.current_cat = 0
+            else:
+                # wait for more data to load
+                self.waiting = True
+                return
 
         self.post_to_pygame("show_cat", self.cats_list[self.current_cat])
-
         self.current_cat += 1
 
+    # Python threads automatically call
+    # run method and exit when it returns
     def run(self):
-        # Threads automatically call run
-        # and exit when it returns
+        # loop while thread is alive
         while not self.stopped.is_set():
-            # show first cat as soon as data is ready
             if self.waiting:
-                # break this loop if self.waiting is False
+                # check every 100ms for new data
+                # post as soon as it's ready
+                # and break this loop
                 while self.waiting and not self.stopped.wait(0.1):
                     if self.current_cat < len(self.cats_list):
                         self.post_cat()
                         self.waiting = False
-            # wait 10 seconds between consecutive posts
             else:
-                # break this loop if self.waiting is True
+                # when not waiting for data
+                # pause for 10 seconds between consecutive posts
                 while not self.waiting and not self.stopped.wait(10.0):
                     self.post_cat()
