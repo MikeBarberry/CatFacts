@@ -62,4 +62,8 @@ class CatFacts:
 
 if __name__ == "__main__":
     program = CatFacts()
-    program.main()
+    try:
+        program.main()
+    except KeyboardInterrupt:
+        emitter.stopped.set()
+        exit(0)
