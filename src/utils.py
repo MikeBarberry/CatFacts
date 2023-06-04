@@ -25,54 +25,41 @@ def init_fonts():
 
 def init_pygame_screen():
     pygame.init()
-
-    screen = pygame.display.set_mode(
+    return pygame.display.set_mode(
         (pygame.display.Info().current_w - 100, pygame.display.Info().current_h - 100),
         pygame.RESIZABLE,
         pygame.SCALED,
     )
 
-    return screen
 
-
-def fetch_cat_data(add_cat_to_list, report_cats_count, start_posting_cat_events):
+def fetch_cat_data(emitter):
     req = urllib.request.Request(
         "https://api.thecatapi.com/v1/breeds",
         headers={"x-api-key": os.getenv("API_KEY")},
     )
-
     res = urllib.request.urlopen(req)
-
     json_res = json.loads(res.read().decode("utf-8"))
-
-    count_cats = 0
+    emitter_started = False
     for ele in json_res:
         if not "image" in ele:
             continue
-        count_cats += 1
-
         imageContent = fetch_cat_image(ele["image"]["url"])
-
         cat = {
             "breed": ele["name"],
             "details": ele["description"],
             "origin": ele["origin"],
             "image": imageContent,
         }
+        emitter.cats_list.append(cat)
+        if not emitter_started:
+            emitter.start()
+            emitter_started = True
 
-        add_cat_to_list(cat)
-
-        if count_cats == 1:
-            start_posting_cat_events()
-
-    report_cats_count(count_cats)
+    emitter.finished_fetching = True
 
 
 def fetch_cat_image(url):
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-
     image_content = urllib.request.urlopen(req)
-
     image_bytes = io.BytesIO(image_content.read())
-
     return image_bytes

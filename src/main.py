@@ -2,33 +2,24 @@ import os
 from threading import Event, Thread
 import io
 import pygame
-
 from cat_events import CatEventEmitter
 from pygame_helper import PygHelper
-
 from utils import init_custom_events, fetch_cat_data
-
-custom_events = init_custom_events()
 
 pyg_helper = PygHelper(
     pygame.display,
     pygame.image,
     pygame.transform,
 )
-
-event_signal = Event()
-cat_event_emitter = CatEventEmitter(event_signal)
-
-fetch = Thread(
+# fetch and post data in sub threads
+# to allow main thread to be
+# exited at any time
+emitter = CatEventEmitter(Event())
+fetch_data = Thread(
     target=fetch_cat_data,
-    args=[
-        cat_event_emitter.add_cat,
-        cat_event_emitter.set_total_count,
-        cat_event_emitter.start_thread,
-    ],
+    args=[emitter],
     daemon=True,
 )
-fetch.start()
 
 
 class CatFacts:
@@ -38,7 +29,8 @@ class CatFacts:
         self.custom_events = init_custom_events()
         self.helper = pyg_helper
         self.post_event("loading")
-        cat_event_emitter.set_post_function(self.post_event)
+        emitter.post_to_pygame = self.post_event
+        fetch_data.start()
 
     def post_event(self, event_name, data={}):
         event_id = self.custom_events[event_name]
@@ -55,17 +47,15 @@ class CatFacts:
 
     def main(self):
         print("\n \U0001F389 Welcome to the show! Let's get this party started... \n")
-        loading, show_cat = self.custom_events.values()
         while self.running:
             event = pygame.event.wait()
             if event.type == pygame.QUIT:
                 self.running = False
-                cat_event_emitter.kill_thread()
-            elif event.type == loading:
+                emitter.stopped.set()
+            elif event.type == self.custom_events["loading"]:
                 self.show_loading_image()
-            elif event.type == show_cat:
-                breed, details, origin, image = event.__dict__["data"].values()
-                self.helper.show_cat(breed, details, origin, image)
+            elif event.type == self.custom_events["show_cat"]:
+                self.helper.show_cat(*event.__dict__["data"].values())
         print("Bye!")
         exit(0)
 
