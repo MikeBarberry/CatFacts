@@ -1,19 +1,16 @@
 import os
-from threading import Event, Thread
 import io
+from threading import Event, Thread
 import pygame
+
 from cat_events import CatEventEmitter
 from pygame_helper import PygHelper
 from utils import init_custom_events, fetch_cat_data
 
-pyg_helper = PygHelper(
-    pygame.display,
-    pygame.image,
-    pygame.transform,
-)
-# fetch and post data in sub threads
-# to allow main thread to be
-# exited at any time
+# fetch data and post to pygame loop
+# in sub threads so main thread
+# can be exited without delay
+
 emitter = CatEventEmitter(Event())
 fetch_data = Thread(
     target=fetch_cat_data,
@@ -24,10 +21,9 @@ fetch_data = Thread(
 
 class CatFacts:
     def __init__(self):
-        pygame.init()
         self.running = True
         self.custom_events = init_custom_events()
-        self.helper = pyg_helper
+        self.helper = PygHelper(pygame)
         self.post_event("loading")
         emitter.post_to_pygame = self.post_event
         fetch_data.start()
@@ -37,13 +33,12 @@ class CatFacts:
         event = pygame.event.Event(event_id, {"data": data})
         pygame.event.post(event)
 
-    def show_loading_image(self):
+    def loading_image(self):
         root_dir = os.path.abspath(".")
-        loading_image_path = os.path.join(root_dir, "images", "inked_loading_cat.jpg")
+        image_path = os.path.join(root_dir, "images", "inked_loading_cat.jpg")
 
-        with open(loading_image_path, "rb") as image:
-            image_bytes = io.BytesIO(image.read())
-            self.helper.show_loading(image_bytes)
+        with open(image_path, "rb") as image:
+            self.helper.show_loading(io.BytesIO(image.read()))
 
     def main(self):
         print("\n \U0001F389 Welcome to the show! Let's get this party started... \n")
@@ -53,7 +48,7 @@ class CatFacts:
                 self.running = False
                 emitter.stopped.set()
             elif event.type == self.custom_events["loading"]:
-                self.show_loading_image()
+                self.loading_image()
             elif event.type == self.custom_events["show_cat"]:
                 self.helper.show_cat(*event.__dict__["data"].values())
         print("Bye!")

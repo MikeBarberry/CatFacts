@@ -1,9 +1,9 @@
-import pygame
 import os
-import urllib.request
 import json
 import os
 import io
+import urllib.request
+import pygame
 
 EMOJI_PATH = os.path.join(os.path.abspath("."), "fonts", "NotoEmoji-Medium.ttf")
 
@@ -16,6 +16,7 @@ def init_custom_events():
 
 
 def init_fonts():
+    pygame.font.init()
     return {
         "small": pygame.font.SysFont("segoeuisymbol", 20),
         "med": pygame.font.SysFont("segoeuisymbol", 25),
@@ -24,7 +25,7 @@ def init_fonts():
 
 
 def init_pygame_screen():
-    pygame.init()
+    pygame.display.init()
     return pygame.display.set_mode(
         (pygame.display.Info().current_w - 100, pygame.display.Info().current_h - 100),
         pygame.RESIZABLE,

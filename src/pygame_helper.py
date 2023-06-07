@@ -1,10 +1,5 @@
 from utils import init_fonts, init_pygame_screen
 
-screen = init_pygame_screen()
-fonts = init_fonts()
-
-smallFont, medFont, emojiFont = fonts.values()
-
 CAT_EMOJI = "\U0001F431"
 GLOBE_EMOJI_NA = "\U0001F30E"
 GLOBE_EMOJI_AS = "\U0001F30F"
@@ -17,43 +12,48 @@ INITIAL_Y = 20
 
 
 class PygHelper:
-    def __init__(self, display, pygImage, transform):
-        self.screen = screen
-        self.display = display
-        self.pygImage = pygImage
-        self.transform = transform
-        self.X = INITIAL_X
-        self.Y = INITIAL_Y
+    def __init__(self, pygame):
+        self.primitives = {
+            "screen": init_pygame_screen(),
+            "display": pygame.display,
+            "image": pygame.image,
+            "transform": pygame.transform,
+        }
+        self.coordinates = {"X": INITIAL_X, "Y": INITIAL_Y}
+        self.fonts = init_fonts()
+        self.converted_images = {}
 
     def show_origin(self, origin):
         screenContent = [
-            (emojiFont, CAT_EMOJI, EMOJI_COLOR),
-            (medFont, origin, ORIGIN_COLOR),
-            (emojiFont, CAT_EMOJI, EMOJI_COLOR),
+            (self.fonts["emoji"], CAT_EMOJI, EMOJI_COLOR),
+            (self.fonts["med"], origin, ORIGIN_COLOR),
+            (self.fonts["emoji"], CAT_EMOJI, EMOJI_COLOR),
         ]
         self.render_and_blit(screenContent, "origin")
 
     def show_details(self, details):
-        brokenLines = self.break_line(smallFont, details)
-        screenContent = [(smallFont, x, DESCRIPTION_COLOR) for x in brokenLines]
+        brokenLines = self.break_line(self.fonts["small"], details)
+        screenContent = [
+            (self.fonts["small"], line, DESCRIPTION_COLOR) for line in brokenLines
+        ]
         self.render_and_blit(screenContent, "details")
 
-    def show_image(self, image):
-        transformed = self.transform_image(image)
+    def show_image(self, image, breed):
+        transformed = self.transform_image(image, breed)
         self.blit({"type": "image", "content": [transformed, (0, 0)]})
 
     def show_cat(self, breed, details, origin, image):
-        self.display.set_caption(breed)
-        self.show_image(image)
+        self.primitives["display"].set_caption(breed)
+        self.show_image(image, breed)
         self.show_origin(origin)
         self.show_details(details)
-        self.display.flip()
+        self.primitives["display"].flip()
         self.console_log(breed, details, origin)
 
     def show_loading(self, image):
-        self.display.set_caption("Loading...")
-        self.show_image(image)
-        self.display.flip()
+        self.primitives["display"].set_caption("Loading...")
+        self.show_image(image, None)
+        self.primitives["display"].flip()
         print(f"Loading data {HOURGLASS_EMOJI}")
 
     def console_log(self, breed, details, origin):
@@ -79,12 +79,31 @@ class PygHelper:
         brokenLines.append(currentLine)
         return brokenLines
 
-    def transform_image(self, image):
-        converted = self.pygImage.load(image).convert()
-        dw, dh = self.display.Info().current_w, self.display.Info().current_h
+    def transform_image(self, image, breed):
+        # Error will throw if attempt to
+        # convert already converted image.
+        # Useful after program restarts from
+        # beginning.
+
+        if breed in self.converted_images:
+            converted = self.converted_images["breed"]
+        else:
+            converted = self.primitives["image"].load(image).convert()
+            self.converted_images[breed] = converted
+
+        # rescale image to fit screen if it's too
+        # large by default and return it
+        # else return without scaling
+
+        dw, dh = (
+            self.primitives["display"].Info().current_w,
+            self.primitives["display"].Info().current_h,
+        )
         rw, rh = converted.get_rect().width, converted.get_rect().height
         if rw > dw or rh > dh:
-            scaled = self.transform.scale(converted, converted.get_rect().center)
+            scaled = self.primitives["transform"].scale(
+                converted, converted.get_rect().center
+            )
             return scaled
         return converted
 
@@ -100,8 +119,8 @@ class PygHelper:
 
     def update_position(self, coord, ele):
         if coord == "X":
-            return self.X + ele.get_width() + 5
-        return self.Y + ele.get_height() + 5
+            return self.coordinates["X"] + ele.get_width() + 5
+        return self.coordinates["Y"] + ele.get_height() + 5
 
     """
     each image starts from initial coords
@@ -119,12 +138,16 @@ class PygHelper:
         if section == "origin" or section == "details":
             for idx in range(len(content)):
                 ele = content[idx]
-                self.screen.blit(ele, (self.X, self.Y))
+                self.primitives["screen"].blit(
+                    ele, (self.coordinates["X"], self.coordinates["Y"])
+                )
                 if section == "origin":
-                    self.X = self.update_position("X", ele)
+                    self.coordinates["X"] = self.update_position("X", ele)
                 if section == "details" or idx == len(content) - 1:
-                    self.Y = self.update_position("Y", ele)
-            self.X = INITIAL_X
-            self.Y = self.Y if section == "origin" else INITIAL_Y
+                    self.coordinates["Y"] = self.update_position("Y", ele)
+            self.coordinates["X"] = INITIAL_X
+            self.coordinates["Y"] = (
+                self.coordinates["Y"] if section == "origin" else INITIAL_Y
+            )
         else:
-            self.screen.blit(*content)
+            self.primitives["screen"].blit(*content)
