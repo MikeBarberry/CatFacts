@@ -23,25 +23,6 @@ class PygHelper:
         self.fonts = init_fonts()
         self.converted_images = {}
 
-    def show_origin(self, origin):
-        screenContent = [
-            (self.fonts["emoji"], CAT_EMOJI, EMOJI_COLOR),
-            (self.fonts["med"], origin, ORIGIN_COLOR),
-            (self.fonts["emoji"], CAT_EMOJI, EMOJI_COLOR),
-        ]
-        self.render_and_blit(screenContent, "origin")
-
-    def show_details(self, details):
-        brokenLines = self.break_line(self.fonts["small"], details)
-        screenContent = [
-            (self.fonts["small"], line, DESCRIPTION_COLOR) for line in brokenLines
-        ]
-        self.render_and_blit(screenContent, "details")
-
-    def show_image(self, image, breed):
-        transformed = self.transform_image(image, breed)
-        self.blit({"type": "image", "content": [transformed, (0, 0)]})
-
     def show_cat(self, breed, details, origin, image):
         self.primitives["display"].set_caption(breed)
         self.show_image(image, breed)
@@ -49,6 +30,27 @@ class PygHelper:
         self.show_details(details)
         self.primitives["display"].flip()
         self.console_log(breed, details, origin)
+
+    def show_image(self, image, breed):
+        transformed = self.transform_image(image, breed)
+        self.blit({"type": "image", "content": [transformed, (0, 0)]})
+
+    def show_origin(self, origin):
+        screenContent = [
+            (self.fonts["emoji"], CAT_EMOJI, EMOJI_COLOR),
+            (self.fonts["med"], origin, ORIGIN_COLOR),
+            (self.fonts["emoji"], CAT_EMOJI, EMOJI_COLOR),
+        ]
+        rendered = self.render(screenContent)
+        self.blit({"type": "origin", "content": rendered})
+
+    def show_details(self, details):
+        brokenLines = self.break_line(self.fonts["small"], details)
+        screenContent = [
+            (self.fonts["small"], line, DESCRIPTION_COLOR) for line in brokenLines
+        ]
+        rendered = self.render(screenContent)
+        self.blit({"type": "details", "content": rendered})
 
     def show_loading(self, image):
         self.primitives["display"].set_caption("Loading...")
@@ -107,15 +109,12 @@ class PygHelper:
             return scaled
         return converted
 
-    def render_and_blit(self, content, type):
-        rendered = self.render_list(content)
-        self.blit({"type": type, "content": rendered})
-
-    def render_list(self, list):
-        return [self.render(*x) for x in list]
-
-    def render(self, font, text, color):
-        return font.render(text, True, color)
+    def render(self, screenContent):
+        rendered = []
+        for content in screenContent:
+            font, text, color = content
+            rendered.append(font.render(text, True, color))
+        return rendered
 
     def update_position(self, coord, ele):
         if coord == "X":
