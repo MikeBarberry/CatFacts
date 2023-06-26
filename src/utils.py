@@ -51,11 +51,15 @@ def fetch_cat_data(emitter):
             "origin": ele["origin"],
             "image": imageContent,
         }
+        # Add cat to list on other thread.
         emitter.cats_list.append(cat)
+        # Start thread if first cat.
         if not emitter_started:
             emitter.start()
             emitter_started = True
 
+    # Let the other thread know all
+    # the data has been fetched.
     emitter.finished_fetching = True
 
 

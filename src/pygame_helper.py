@@ -121,15 +121,12 @@ class PygHelper:
             return self.coordinates["X"] + ele.get_width() + 5
         return self.coordinates["Y"] + ele.get_height() + 5
 
-    """
-    each image starts from initial coords
-    increase curr X after each origin ele
-    also increase Y after last origin ele
-    increase Y after each details ele
-    reset Y after details but not origin
-    since details will come next
-    if type is other just blit content
-    """
+    # For origin or details sections:
+    # Each image starts from initial X and Y.
+    # Increase X after each origin element.
+    # Increase Y after last origin element.
+    # Increase Y after each details element.
+    # Reset Y after details.
 
     def blit(self, request):
         content = request["content"]

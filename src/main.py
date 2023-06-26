@@ -1,17 +1,24 @@
-import os
-import io
+import os, io
 from threading import Event, Thread
+
 import pygame
 
-from cat_events import CatEventEmitter
-from pygame_helper import PygHelper
 from utils import init_custom_events, fetch_cat_data
+from pygame_helper import PygHelper
+from cat_events import CatEventEmitter
 
-# fetch data and post to pygame loop
-# in sub threads so main thread
-# can be exited without delay
+pyg_helper = PygHelper(
+    pygame.display,
+    pygame.image,
+    pygame.transform,
+)
 
+# Declare thread that will post to
+# pygame event loop.
 emitter = CatEventEmitter(Event())
+# Pass it to data-fetching thread as
+# an argument, and run both in the
+# background.
 fetch_data = Thread(
     target=fetch_cat_data,
     args=[emitter],
@@ -23,9 +30,13 @@ class CatFacts:
     def __init__(self):
         self.running = True
         self.custom_events = init_custom_events()
-        self.helper = PygHelper(pygame)
+        self.helper = pyg_helper
+        # Set loading screen.
         self.post_event("loading")
+        # Give event emitter thread function
+        # to post to this main loop.
         emitter.post_to_pygame = self.post_event
+        # Start fetching data.
         fetch_data.start()
 
     def post_event(self, event_name, data={}):
@@ -46,6 +57,7 @@ class CatFacts:
             event = pygame.event.wait()
             if event.type == pygame.QUIT:
                 self.running = False
+                # Kill daemon thread.
                 emitter.stopped.set()
             elif event.type == self.custom_events["loading"]:
                 self.loading_image()
@@ -60,5 +72,6 @@ if __name__ == "__main__":
     try:
         program.main()
     except KeyboardInterrupt:
+        # Kill daemon thread.
         emitter.stopped.set()
         exit(0)
