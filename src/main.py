@@ -7,11 +7,7 @@ from utils import init_custom_events, fetch_cat_data
 from pygame_helper import PygHelper
 from cat_events import CatEventEmitter
 
-pyg_helper = PygHelper(
-    pygame.display,
-    pygame.image,
-    pygame.transform,
-)
+pyg_helper = PygHelper(pygame)
 
 # Declare thread that will post to
 # pygame event loop.

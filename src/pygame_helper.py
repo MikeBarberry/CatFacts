@@ -10,6 +10,8 @@ DESCRIPTION_COLOR = (65, 65, 65)
 INITIAL_X = 20
 INITIAL_Y = 20
 
+# Outputs to pygame screen and terminal console.
+
 
 class PygHelper:
     def __init__(self, pygame):
@@ -81,33 +83,27 @@ class PygHelper:
         brokenLines.append(currentLine)
         return brokenLines
 
-    def transform_image(self, image, breed):
-        # Error will throw if attempt to
-        # convert already converted image.
-        # Useful after program restarts from
-        # beginning.
+        # Store converted images for use in
+        # reruns.
 
+    def transform_image(self, image, breed):
         if breed in self.converted_images:
-            converted = self.converted_images["breed"]
+            return self.converted_images[breed]
         else:
             converted = self.primitives["image"].load(image).convert()
-            self.converted_images[breed] = converted
-
-        # rescale image to fit screen if it's too
-        # large by default and return it
-        # else return without scaling
-
-        dw, dh = (
-            self.primitives["display"].Info().current_w,
-            self.primitives["display"].Info().current_h,
-        )
-        rw, rh = converted.get_rect().width, converted.get_rect().height
-        if rw > dw or rh > dh:
-            scaled = self.primitives["transform"].scale(
-                converted, converted.get_rect().center
+            # Resize image if too large. Display dimensions.
+            dw, dh = (
+                self.primitives["display"].Info().current_w,
+                self.primitives["display"].Info().current_h,
             )
-            return scaled
-        return converted
+            # Image dimensions.
+            rw, rh = converted.get_rect().width, converted.get_rect().height
+            if rw > dw or rh > dh:
+                converted = self.primitives["transform"].scale(
+                    converted, converted.get_rect().center
+                )
+            self.converted_images[breed] = converted
+            return converted
 
     def render(self, screenContent):
         rendered = []

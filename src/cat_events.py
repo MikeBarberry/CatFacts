@@ -56,5 +56,5 @@ class CatEventEmitter(Thread):
                         self.waiting = False
             # Data is there, pause 10 seconds between posts.
             else:
-                while not self.waiting and not self.stopped.wait(10.0):
+                while not self.waiting and not self.stopped.wait(1.0):
                     self.post_cat()
