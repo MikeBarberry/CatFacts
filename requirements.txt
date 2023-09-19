@@ -1,4 +1,5 @@
-#author=Mike-Barberry
+# This project is licensed under the GNU General Public License v3.0 (GPL-3.0)
+# author=Mike-Barberry
 certifi==2022.12.7
 charset-normalizer==3.1.0
 idna==3.4
