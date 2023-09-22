@@ -15,16 +15,23 @@ INITIAL_Y = 20
 
 class PygHelper:
     def __init__(self, pygame):
+        # Pygame objects.
         self.primitives = {
             "screen": init_pygame_screen(),
             "display": pygame.display,
             "image": pygame.image,
             "transform": pygame.transform,
         }
+        # Used on the screen so spacing
+        # looks natural.
         self.coordinates = {"X": INITIAL_X, "Y": INITIAL_Y}
         self.fonts = init_fonts()
+        # Save converted images for subsequent
+        # program loops.
         self.converted_images = {}
 
+    # Main method to show a cat.
+    # Calls other methods in this file.
     def show_cat(self, breed, details, origin, image):
         self.primitives["display"].set_caption(breed)
         self.show_image(image, breed)
@@ -117,8 +124,15 @@ class PygHelper:
             return self.coordinates["X"] + ele.get_width() + 5
         return self.coordinates["Y"] + ele.get_height() + 5
 
-    # For origin or details sections:
-    # Each image starts from initial X and Y.
+    # Essentially we are ensuring that
+    # elements on the screen are correctly
+    # positioned.
+    # Origin information is presented
+    # horizontally and details
+    # are presented vertically,
+    # with origin coming before
+    # details so:
+    # Start from initial X and Y.
     # Increase X after each origin element.
     # Increase Y after last origin element.
     # Increase Y after each details element.

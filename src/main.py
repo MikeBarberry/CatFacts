@@ -7,14 +7,19 @@ from utils import init_custom_events, fetch_cat_data
 from pygame_helper import PygHelper
 from cat_events import CatEventEmitter
 
+# Initialize Pygame helper class.
 pyg_helper = PygHelper(pygame)
 
-# Declare thread that will post to
-# pygame event loop.
+# Initialize event emitter thread.
 emitter = CatEventEmitter(Event())
-# Pass it to data-fetching thread as
-# an argument, and run both in the
-# background.
+
+# Initialize data fetching
+# thread and pass the
+# emitter thread as an argument.
+# Data will be sent to the
+# emitting thread *as it is received*
+# rather than waiting for everything
+# to finish.
 fetch_data = Thread(
     target=fetch_cat_data,
     args=[emitter],
@@ -27,19 +32,21 @@ class CatFacts:
         self.running = True
         self.custom_events = init_custom_events()
         self.helper = pyg_helper
-        # Set loading screen.
+        # Set default loading picture.
         self.post_event("loading")
-        # Give event emitter thread function
-        # to post to this main loop.
+        # Attach function to post Pygame
+        # events to the emitter thread.
         emitter.post_to_pygame = self.post_event
-        # Start fetching data.
+        # Begin data fetching.
         fetch_data.start()
 
+    # Main function to post events to this Pygame loop.
     def post_event(self, event_name, data={}):
         event_id = self.custom_events[event_name]
         event = pygame.event.Event(event_id, {"data": data})
         pygame.event.post(event)
 
+    # Default image shown when program starts.
     def loading_image(self):
         root_dir = os.path.abspath(".")
         image_path = os.path.join(root_dir, "images", "inked_loading_cat.jpg")
@@ -47,6 +54,7 @@ class CatFacts:
         with open(image_path, "rb") as image:
             self.helper.show_loading(io.BytesIO(image.read()))
 
+    # Pygame event loop.
     def main(self):
         print("\n \U0001F389 Welcome to the show! Let's get this party started... \n")
         while self.running:

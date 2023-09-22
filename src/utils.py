@@ -51,18 +51,23 @@ def fetch_cat_data(emitter):
             "origin": ele["origin"],
             "image": imageContent,
         }
-        # Add cat to list on other thread.
+        # Add to cats_list in
+        # emitter thread.
         emitter.cats_list.append(cat)
-        # Start thread if first cat.
+        # Start the emitter if
+        # not already (i.e. the
+        # first cat).
         if not emitter_started:
             emitter.start()
             emitter_started = True
 
-    # Let the other thread know all
-    # the data has been fetched.
+    # Set attribute on emitter thread
+    # to indicate data is finished loading.
     emitter.finished_fetching = True
 
 
+# The actual image data is not sent with the
+# rest of the main response.
 def fetch_cat_image(url):
     req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
     image_content = urllib.request.urlopen(req)
