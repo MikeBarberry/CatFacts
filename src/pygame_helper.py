@@ -90,9 +90,6 @@ class PygHelper:
         brokenLines.append(currentLine)
         return brokenLines
 
-        # Store converted images for use in
-        # reruns.
-
     def transform_image(self, image, breed):
         if breed in self.converted_images:
             return self.converted_images[breed]
@@ -109,6 +106,8 @@ class PygHelper:
                 converted = self.primitives["transform"].scale(
                     converted, converted.get_rect().center
                 )
+            # Store converted images for use in
+            # reruns.
             self.converted_images[breed] = converted
             return converted
 
