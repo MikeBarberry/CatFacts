@@ -4,3 +4,7 @@ logs/
 __pycache__/
 .vscode
 sandbox/
+test/
+node_modules/
+.parcel-cache/
+dist/

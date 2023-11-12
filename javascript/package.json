@@ -1,0 +1,42 @@
+{
+  "version": "1.0",
+  "name": "catfactsjs",
+  "author": "Mike Barberry",
+  "private": true,
+  "engines": {
+    "node": "^18"
+  },
+  "targets": {
+    "default": {
+      "engines": {
+        "browsers": ">= 50%"
+      }
+    }
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app",
+      "react-app/jest"
+    ]
+  },
+  "scripts": {
+    "dev": "parcel public/index.html",
+    "build": "parcel build public/index.html"
+  },
+  "dependencies": {
+    "@emotion/react": "^11.10.5",
+    "@emotion/styled": "^11.10.5",
+    "@mui/icons-material": "^5.10.9",
+    "@mui/material": "^5.10.13",
+    "darkreader": "^4.9.58",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.11.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.21.5",
+    "@emotion/babel-plugin": "^11.10.8",
+    "parcel": "^2.8.3",
+    "process": "^0.11.10"
+  }
+}
