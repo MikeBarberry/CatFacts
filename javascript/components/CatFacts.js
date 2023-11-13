@@ -13,9 +13,7 @@ import loadingCat from '../public/inked_loading_cat.jpg';
 import startCat from '../public/startCat.avif';
 import avatar from '../public/avatar.webp';
 
-//const mobile = useMediaQuery(theme.breakpoints.down('tablet'));
-
-function Cat({ imgSrc, name, description, origin }) {
+function Cat({ imgSrc, name, description, origin, mobile }) {
   return (
     <Box
       sx={{
@@ -33,14 +31,28 @@ function Cat({ imgSrc, name, description, origin }) {
           gap: '20px',
           padding: '40px',
         }}>
-        <Typography sx={{ fontWeight: 900, fontSize: '20px', color: 'orange' }}>
+        <Typography
+          sx={{
+            fontWeight: 900,
+            fontSize: mobile ? '34px' : '20px',
+            color: 'orange',
+          }}>
           <PetsIcon /> {name} <PetsIcon />
         </Typography>
         <Typography
-          sx={{ color: 'dodgerblue', fontWeight: 900, fontSize: '20px' }}>
+          sx={{
+            color: 'dodgerblue',
+            fontWeight: 900,
+            fontSize: mobile ? '34px' : '20px',
+          }}>
           <PublicIcon /> {origin} <PublicIcon />
         </Typography>
-        <Typography sx={{ color: 'green', fontWeight: 900, fontSize: '20px' }}>
+        <Typography
+          sx={{
+            color: 'green',
+            fontWeight: 900,
+            fontSize: mobile ? '34px' : '20px',
+          }}>
           {description}
         </Typography>
       </Box>
@@ -49,6 +61,7 @@ function Cat({ imgSrc, name, description, origin }) {
 }
 
 function Pygame({
+  mobile,
   setLoading,
   catsRef,
   cat = null,
@@ -99,6 +112,7 @@ function Pygame({
             const imgSrc = `data:${contentType};base64,${text}`;
             catsRef.current.push(
               <Cat
+                mobile={mobile}
                 name={name}
                 description={description}
                 origin={origin}
@@ -117,7 +131,7 @@ function Pygame({
   return <Box sx={{ flexBasis: '80%' }}>{cat}</Box>;
 }
 
-function Start({ run }) {
+function Start({ run, mobile }) {
   return (
     <Box
       sx={{
@@ -137,7 +151,7 @@ function Start({ run }) {
             cursor: 'pointer',
           },
           color: `${blue[500]}`,
-          fontSize: 40,
+          fontSize: mobile ? 120 : 40,
         }}
       />
     </Box>
@@ -146,6 +160,7 @@ function Start({ run }) {
 
 export default function CatFacts() {
   const catsRef = useRef([]);
+  const [mobile, _] = useState(window.outerWidth <= 720);
   const [currCat, setCurrCat] = useState(-1);
   const [running, setRunning] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -162,7 +177,6 @@ export default function CatFacts() {
   );
 
   const intervalFn = (fetchedAll, currCat, n) => {
-    console.log('interval fn', fetchedAll, currCat, n);
     if (fetchedAll && currCat === n - 1) {
       setCurrCat(0);
     } else {
@@ -174,13 +188,21 @@ export default function CatFacts() {
     let id;
 
     if (running) {
+      if (mobile) {
+      }
       if (currCat === -1) {
         setCurrCat((currCat) => currCat + 1);
       } else {
         id = setTimeout(() => {
           intervalFn(fetchedAll, currCat, catsRef.current.length);
-        }, 3000);
+        }, 10000);
       }
+    }
+
+    const icons = document.querySelectorAll('.runIcon');
+    for (const icon of icons) {
+      console.log(icon);
+      icon.style['font-size'] = '48px';
     }
 
     return () => {
@@ -188,90 +210,150 @@ export default function CatFacts() {
     };
   }, [running, currCat]);
 
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDir: 'row',
-        backgroundColor: '#0E1525',
-        height: '100vh',
-        width: '100vw',
-      }}>
-      {running ? (
+  const mainContent = () => {
+    if (running) {
+      return (
         <Pygame
+          mobile={mobile}
           catsRef={catsRef}
           cat={loading ? loadingCatImg : catsRef.current[currCat]}
           setLoading={setLoading}
           fetchedAll={fetchedAll}
           setFetchedAll={() => setFetchedAll(true)}
         />
-      ) : (
-        <Start run={() => setRunning(true)} />
-      )}
+      );
+    }
+    return (
+      <Start
+        run={() => setRunning(true)}
+        mobile={mobile}
+      />
+    );
+  };
+
+  const extraContent = (
+    <Box
+      sx={{
+        flexBasis: '20%',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '20px',
+        fontSize: mobile ? '34px' : undefined,
+        justifyContent: mobile ? 'center' : undefined,
+        alignItems: mobile ? 'center' : undefined,
+      }}>
+      <Button
+        startIcon={
+          running ? (
+            <StopOutlinedIcon className='runIcon' />
+          ) : (
+            <PlayArrowIcon className='runIcon' />
+          )
+        }
+        variant='contained'
+        sx={{
+          width: mobile ? '50%' : '100%',
+          height: mobile ? '100px' : undefined,
+        }}
+        onClick={() => {
+          setRunning(!running);
+          setCurrCat(0);
+          if (running) {
+            setLoading(true);
+          } else {
+            setLoading(false);
+          }
+        }}>
+        <Typography sx={{ fontSize: mobile ? '34px' : undefined }}>
+          {running ? 'Stop' : 'Run'}
+        </Typography>
+      </Button>
       <Box
         sx={{
-          flexBasis: '20%',
+          padding: '0px 15px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '20px',
+          gap: '10px',
+          '& p': {
+            fontSize: mobile ? '34px' : undefined,
+          },
+          alignSelf: 'flex-start',
         }}>
-        <Button
-          startIcon={running ? <StopOutlinedIcon /> : <PlayArrowIcon />}
-          variant='contained'
-          sx={{ width: '100%' }}
-          onClick={() => {
-            setRunning(!running);
-            setCurrCat(0);
-            if (running) {
-              setLoading(true);
-            } else {
-              setLoading(false);
-            }
-          }}>
-          {running ? 'Stop' : 'Run'}
-        </Button>
         <Box
           sx={{
-            padding: '0px 5px',
             display: 'flex',
-            flexDirection: 'column',
-            gap: '15px',
+            flexDirection: 'row',
+            gap: '10px',
+            alignItems: 'center',
+          }}>
+          <SiPython fontSize={'28px'} />
+          <Typography sx={{ fontSize: '20px', fontWeight: 500 }}>
+            catfacts
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            gap: '10px',
+            alignItems: 'center',
           }}>
           <Box
+            component='img'
+            src={avatar}
             sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              gap: '10px',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
-            <SiPython />
-            <Typography sx={{ fontSize: '20px', fontWeight: 600 }}>
-              catfacts
-            </Typography>
-          </Box>
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'row',
-              gap: '10px',
-              justifyContent: 'center',
-              alignItems: 'center',
-            }}>
-            <Box
-              component='img'
-              src={avatar}
-              sx={{
-                height: '24px',
-                width: '24px',
-                borderRadius: '100px',
-              }}></Box>
-            <Typography sx={{ fontSize: '12px', fontWeight: 300 }}>
-              MikeBarberry
-            </Typography>
-          </Box>
+              height: '28px',
+              width: '28px',
+              borderRadius: '100px',
+              textAlign: 'center',
+            }}></Box>
+          <Typography sx={{ fontSize: '14px', fontWeight: 300 }}>
+            MikeBarberry
+          </Typography>
+        </Box>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            gap: '10px',
+            alignItems: 'center',
+            textAlign: 'center',
+          }}>
+          <Typography sx={{ fontSize: '14px', fontWeight: 300 }}>
+            Sept 18, 2023 &#183; 25 Runs
+          </Typography>
         </Box>
       </Box>
+    </Box>
+  );
+
+  const order = () => {
+    if (mobile) {
+      return (
+        <>
+          {extraContent}
+          {mainContent()}
+        </>
+      );
+    }
+    return (
+      <>
+        {mainContent()}
+        {extraContent}
+      </>
+    );
+  };
+
+  return (
+    <Box
+      sx={{
+        display: 'flex',
+        flexDirection: mobile ? 'column' : 'row',
+        backgroundColor: '#0E1525',
+        height: '100vh',
+        width: '100vw',
+      }}>
+      {order()}
     </Box>
   );
 }
