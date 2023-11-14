@@ -52,7 +52,7 @@ const updateRuns = async (event) => {
   const collection = db.collection('runs');
   try {
     const response = await collection.updateOne(
-      { _id: new ObjectId('6551c43d7dafcb9b0e5b9e83') },
+      { _id: new ObjectId(process.env.OBJECT_ID) },
       { $inc: { count: 1 } }
     );
     if (response.acknowledged) {
