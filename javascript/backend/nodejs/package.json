@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "mongodb": "^6.2.0"
+  },
+  "scripts": {
+    "zip": "zip -r upload.zip ./ -x \"package*\"",
+    "lambda": "aws lambda update-function-code --function-name catfacts --zip-file fileb://upload.zip"
+  }
+}
