@@ -69,13 +69,13 @@ export function Pygame({
               case 'Dragon Li':
                 {
                   image.url =
-                    'https://www.mascotarios.org/wp-content/uploads/2011/07/Dragon-Li-768x768.jpg';
+                    'https://petkeen.com/wp-content/uploads/2022/09/Chinese-Dragon-Li-Cat-Robert-Way-Shutterstock-3.jpg';
                 }
                 break;
               case 'Ocicat':
                 {
                   image.url =
-                    'https://www.dogalize.com/wp-content/uploads/2017/03/ocicat.jpg';
+                    'http://www.catconcerns.com/wp-content/uploads/2016/09/1_ocicat.jpg';
                 }
                 break;
             }
