@@ -1,3 +1,5 @@
+// This code is art.
+
 import { useState, useEffect, useRef } from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -62,7 +64,7 @@ export default function CatFacts() {
 
     if (running) {
       if (currCat === -1) {
-        setCurrCat((currCat) => currCat + 1);
+        setCurrCat((currCat) => currCat + 1); // LOL. This was not planned.
       } else {
         id = setTimeout(() => {
           intervalFn(fetchedAll, currCat, catsRef.current.length);

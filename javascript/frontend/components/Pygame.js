@@ -69,7 +69,7 @@ export function Pygame({
               case 'Dragon Li':
                 {
                   image.url =
-                    'https://petkeen.com/wp-content/uploads/2022/09/Chinese-Dragon-Li-Cat-Robert-Way-Shutterstock-3.jpg';
+                    'https://mikesoftwareengineeringtestbucket.s3.us-west-2.amazonaws.com/Dragon_Li.jpg';
                 }
                 break;
               case 'Ocicat':
